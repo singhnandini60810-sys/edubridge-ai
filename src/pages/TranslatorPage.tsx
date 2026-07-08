@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Languages } from "lucide-react";
+import { Languages, Mic, Volume2 } from "lucide-react";
 import { translateText } from "../services/translatorService";
 
 const TranslatorPage = () => {
@@ -8,18 +8,53 @@ const TranslatorPage = () => {
   const [sourceLang, setSourceLang] = useState("en");
   const [targetLang, setTargetLang] = useState("hi");
   const [loading, setLoading] = useState(false);
+  const [listening, setListening] = useState(false);
 
   const handleTranslate = async () => {
     setLoading(true);
-
-    const result = await translateText({
-      text: inputText,
-      sourceLang,
-      targetLang,
-    });
-
+    const result = await translateText({ text: inputText, sourceLang, targetLang });
     setOutputText(result);
     setLoading(false);
+  };
+
+  const handleSpeakInput = () => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser. Try Chrome.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = sourceLang === "hi" ? "hi-IN" : "en-US";
+    recognition.interimResults = false;
+
+    setListening(true);
+    recognition.start();
+
+    recognition.onresult = (event: any) => {
+      const spokenText = event.results[0][0].transcript;
+      setInputText(spokenText);
+      setListening(false);
+    };
+
+    recognition.onerror = () => {
+      setListening(false);
+      alert("Could not capture voice. Please try again.");
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+    };
+  };
+
+  const handleListenOutput = () => {
+    if (!outputText) return;
+
+    const speech = new SpeechSynthesisUtterance(outputText);
+    speech.lang = targetLang === "hi" ? "hi-IN" : "en-US";
+    window.speechSynthesis.speak(speech);
   };
 
   return (
@@ -35,7 +70,7 @@ const TranslatorPage = () => {
           </h2>
 
           <p className="mt-3 text-slate-600">
-            Type a lesson, word, or sentence and translate it for classroom learning.
+            Type or speak a lesson and translate it for classroom learning.
           </p>
         </div>
 
@@ -64,23 +99,43 @@ const TranslatorPage = () => {
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Type text here..."
+              placeholder="Type text here or use microphone..."
               className="h-56 w-full resize-none rounded-2xl border border-slate-200 p-4 outline-none focus:border-emerald-500"
             />
 
-            <button
-              onClick={handleTranslate}
-              disabled={loading}
-              className="mt-4 w-full rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-            >
-              {loading ? "Translating..." : "Translate"}
-            </button>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <button
+                onClick={handleSpeakInput}
+                className="flex items-center justify-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-6 py-3 font-semibold text-sky-700 hover:bg-sky-100"
+              >
+                <Mic size={18} />
+                {listening ? "Listening..." : "Use Mic"}
+              </button>
+
+              <button
+                onClick={handleTranslate}
+                disabled={loading}
+                className="rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+              >
+                {loading ? "Translating..." : "Translate"}
+              </button>
+            </div>
           </div>
 
           <div className="rounded-3xl bg-emerald-600 p-5 text-white shadow-sm">
-            <p className="mb-3 text-sm font-semibold text-emerald-100">
-              TRANSLATED OUTPUT
-            </p>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-semibold text-emerald-100">
+                TRANSLATED OUTPUT
+              </p>
+
+              <button
+                onClick={handleListenOutput}
+                className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
+              >
+                <Volume2 size={16} />
+                Listen
+              </button>
+            </div>
 
             <div className="min-h-56 rounded-2xl bg-white/10 p-4 text-lg leading-8">
               {outputText || "Your translated text will appear here."}
