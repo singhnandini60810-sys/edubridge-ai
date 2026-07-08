@@ -1,6 +1,6 @@
 import { BookOpen, Mic, Sparkles, Volume2 } from "lucide-react";
 import Navbar from "../components/Navbar";
-
+import TranslatorPage from "./TranslatorPage";
 const LandingPage = () => {
   return (
     <div className="min-h-screen bg-slate-50">
@@ -81,6 +81,7 @@ const LandingPage = () => {
             </div>
           </div>
         </section>
+        <TranslatorPage />
       </main>
     </div>
   );
