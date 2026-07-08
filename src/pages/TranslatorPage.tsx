@@ -1,6 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Languages, Mic, Volume2 } from "lucide-react";
 import { translateText } from "../services/translatorService";
+
+type HistoryItem = {
+  input: string;
+  output: string;
+  sourceLang: string;
+  targetLang: string;
+};
 
 const TranslatorPage = () => {
   const [inputText, setInputText] = useState("");
@@ -9,11 +16,45 @@ const TranslatorPage = () => {
   const [targetLang, setTargetLang] = useState("hi");
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+
+  useEffect(() => {
+    const savedHistory = localStorage.getItem("translationHistory");
+
+    if (savedHistory) {
+      setHistory(JSON.parse(savedHistory));
+    }
+  }, []);
 
   const handleTranslate = async () => {
+    if (!inputText.trim()) {
+      alert("Please type or speak something first.");
+      return;
+    }
+
     setLoading(true);
-    const result = await translateText({ text: inputText, sourceLang, targetLang });
+
+    const result = await translateText({
+      text: inputText,
+      sourceLang,
+      targetLang,
+    });
+
     setOutputText(result);
+
+    const newHistory = [
+      {
+        input: inputText,
+        output: result,
+        sourceLang,
+        targetLang,
+      },
+      ...history,
+    ].slice(0, 5);
+
+    setHistory(newHistory);
+    localStorage.setItem("translationHistory", JSON.stringify(newHistory));
+
     setLoading(false);
   };
 
@@ -39,17 +80,17 @@ const TranslatorPage = () => {
       setListening(false);
     };
 
-   recognition.onerror = (event: any) => {
-  setListening(false);
+    recognition.onerror = (event: any) => {
+      setListening(false);
 
-  if (event.error === "not-allowed") {
-    alert("Microphone permission is blocked. Allow mic permission from browser address bar.");
-  } else if (event.error === "no-speech") {
-    alert("No voice detected. Speak clearly after clicking Use Mic.");
-  } else {
-    alert(`Voice error: ${event.error}`);
-  }
-};
+      if (event.error === "not-allowed") {
+        alert("Microphone permission is blocked. Allow mic permission from browser address bar.");
+      } else if (event.error === "no-speech") {
+        alert("No voice detected. Speak clearly after clicking Use Mic.");
+      } else {
+        alert(`Voice error: ${event.error}`);
+      }
+    };
 
     recognition.onend = () => {
       setListening(false);
@@ -62,6 +103,11 @@ const TranslatorPage = () => {
     const speech = new SpeechSynthesisUtterance(outputText);
     speech.lang = targetLang === "hi" ? "hi-IN" : "en-US";
     window.speechSynthesis.speak(speech);
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+    localStorage.removeItem("translationHistory");
   };
 
   return (
@@ -149,6 +195,41 @@ const TranslatorPage = () => {
             </div>
           </div>
         </div>
+
+        {history.length > 0 && (
+          <div className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <h3 className="text-2xl font-bold text-slate-900">
+                Recent Translation History
+              </h3>
+
+              <button
+                onClick={clearHistory}
+                className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-100"
+              >
+                Clear
+              </button>
+            </div>
+
+            <div className="grid gap-4">
+              {history.map((item, index) => (
+                <div
+                  key={index}
+                  className="rounded-2xl border border-slate-100 bg-slate-50 p-4"
+                >
+                  <p className="text-sm font-semibold text-slate-500">
+                    {item.sourceLang.toUpperCase()} → {item.targetLang.toUpperCase()}
+                  </p>
+
+                  <p className="mt-2 text-slate-800">{item.input}</p>
+                  <p className="mt-2 font-semibold text-emerald-700">
+                    {item.output}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
