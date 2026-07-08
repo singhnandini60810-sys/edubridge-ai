@@ -4,13 +4,22 @@ type TranslateParams = {
   targetLang: string;
 };
 
-const demoTranslations: Record<string, string> = {
-  "water cycle": "जल चक्र",
-  "good morning": "सुप्रभात",
-  "how are you": "आप कैसे हैं?",
-  "school": "विद्यालय",
-  "teacher": "शिक्षक",
-  "student": "विद्यार्थी",
+const dictionary: Record<string, Record<string, string>> = {
+  en: {
+    teacher: "शिक्षक",
+    student: "विद्यार्थी",
+    school: "विद्यालय",
+    "good morning": "सुप्रभात",
+    "water cycle": "जल चक्र",
+  },
+
+  hi: {
+    शिक्षक: "Teacher",
+    विद्यार्थी: "Student",
+    विद्यालय: "School",
+    सुप्रभात: "Good Morning",
+    "जल चक्र": "Water Cycle",
+  },
 };
 
 export const translateText = async ({
@@ -18,17 +27,17 @@ export const translateText = async ({
   sourceLang,
   targetLang,
 }: TranslateParams): Promise<string> => {
-  const cleanText = text.trim().toLowerCase();
+  const clean = text.trim();
 
-  if (!text.trim()) {
-    return "";
+  if (!clean) return "";
+
+  if (sourceLang === "en" && targetLang === "hi") {
+    return dictionary.en[clean.toLowerCase()] ?? `[Demo] ${clean}`;
   }
 
-  const demoResult = demoTranslations[cleanText];
-
-  if (demoResult) {
-    return demoResult;
+  if (sourceLang === "hi" && targetLang === "en") {
+    return dictionary.hi[clean] ?? `[Demo] ${clean}`;
   }
 
-  return `[AI Demo] ${sourceLang.toUpperCase()} → ${targetLang.toUpperCase()}: ${text}`;
+  return clean;
 };

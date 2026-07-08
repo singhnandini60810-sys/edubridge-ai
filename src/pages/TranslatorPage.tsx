@@ -98,13 +98,53 @@ const TranslatorPage = () => {
   };
 
   const handleListenOutput = () => {
-    if (!outputText) return;
+  if (!outputText) {
+    alert("Translate something first.");
+    return;
+  }
 
-    const speech = new SpeechSynthesisUtterance(outputText);
+  if (!("speechSynthesis" in window)) {
+    alert("Speech output is not supported in this browser.");
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+
+  const cleanOutput = outputText
+    .replace("[AI Demo]", "")
+    .replace(`${sourceLang.toUpperCase()} → ${targetLang.toUpperCase()}:`, "")
+    .trim();
+
+  const speakNow = () => {
+    const speech = new SpeechSynthesisUtterance(cleanOutput);
+    const voices = window.speechSynthesis.getVoices();
+
+    const preferredVoice = voices.find((voice) =>
+      targetLang === "hi"
+        ? voice.lang.toLowerCase().includes("hi")
+        : voice.lang.toLowerCase().includes("en")
+    );
+
+    if (preferredVoice) {
+      speech.voice = preferredVoice;
+    }
+
     speech.lang = targetLang === "hi" ? "hi-IN" : "en-US";
+    speech.rate = 0.85;
+    speech.pitch = 1;
+    speech.volume = 1;
+
     window.speechSynthesis.speak(speech);
   };
 
+  const voices = window.speechSynthesis.getVoices();
+
+  if (voices.length === 0) {
+    window.speechSynthesis.onvoiceschanged = speakNow;
+  } else {
+    speakNow();
+  }
+};
   const clearHistory = () => {
     setHistory([]);
     localStorage.removeItem("translationHistory");
