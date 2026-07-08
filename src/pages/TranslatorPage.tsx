@@ -39,10 +39,17 @@ const TranslatorPage = () => {
       setListening(false);
     };
 
-    recognition.onerror = () => {
-      setListening(false);
-      alert("Could not capture voice. Please try again.");
-    };
+   recognition.onerror = (event: any) => {
+  setListening(false);
+
+  if (event.error === "not-allowed") {
+    alert("Microphone permission is blocked. Allow mic permission from browser address bar.");
+  } else if (event.error === "no-speech") {
+    alert("No voice detected. Speak clearly after clicking Use Mic.");
+  } else {
+    alert(`Voice error: ${event.error}`);
+  }
+};
 
     recognition.onend = () => {
       setListening(false);
