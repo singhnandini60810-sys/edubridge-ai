@@ -4,22 +4,9 @@ type TranslateParams = {
   targetLang: string;
 };
 
-const dictionary: Record<string, Record<string, string>> = {
-  en: {
-    teacher: "शिक्षक",
-    student: "विद्यार्थी",
-    school: "विद्यालय",
-    "good morning": "सुप्रभात",
-    "water cycle": "जल चक्र",
-  },
-
-  hi: {
-    शिक्षक: "Teacher",
-    विद्यार्थी: "Student",
-    विद्यालय: "School",
-    सुप्रभात: "Good Morning",
-    "जल चक्र": "Water Cycle",
-  },
+type TranslationResponse = {
+  translatedText?: string;
+  error?: string;
 };
 
 export const translateText = async ({
@@ -27,17 +14,33 @@ export const translateText = async ({
   sourceLang,
   targetLang,
 }: TranslateParams): Promise<string> => {
-  const clean = text.trim();
+  const cleanText = text.trim();
 
-  if (!clean) return "";
-
-  if (sourceLang === "en" && targetLang === "hi") {
-    return dictionary.en[clean.toLowerCase()] ?? `[Demo] ${clean}`;
+  if (!cleanText) {
+    return "";
   }
 
-  if (sourceLang === "hi" && targetLang === "en") {
-    return dictionary.hi[clean] ?? `[Demo] ${clean}`;
+  const response = await fetch("/api/translate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      text: cleanText,
+      sourceLang,
+      targetLang,
+    }),
+  });
+
+  const data = (await response.json()) as TranslationResponse;
+
+  if (!response.ok) {
+    throw new Error(data.error || "Translation failed.");
   }
 
-  return clean;
+  if (!data.translatedText) {
+    throw new Error("The translation service returned no result.");
+  }
+
+  return data.translatedText;
 };
