@@ -5,9 +5,13 @@ type TranslateParams = {
 };
 
 type TranslationResponse = {
+  success?: boolean;
   translatedText?: string;
   error?: string;
 };
+
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export const translateText = async ({
   text,
@@ -20,7 +24,7 @@ export const translateText = async ({
     return "";
   }
 
-  const response = await fetch("/api/translate", {
+  const response = await fetch(`${API_URL}/api/translate`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -39,7 +43,7 @@ export const translateText = async ({
   }
 
   if (!data.translatedText) {
-    throw new Error("The translation service returned no result.");
+    throw new Error("The server returned no translation.");
   }
 
   return data.translatedText;
